@@ -3,9 +3,9 @@ import (
 "flag"
 "fmt"
 "os"
+"github.com/tracolerd/schema-drift-observatory/internal/parser"
 )
 const Version = "0.1.0"
-// checkFileExists verifies if a file exists and is not empty.
 func checkFileExists(path string) error {
 info, err := os.Stat(path)
 if os.IsNotExist(err) {
@@ -40,7 +40,6 @@ fmt.Fprintln(os.Stderr, "Error: Both --baseline and --candidate flags are requir
 flag.Usage()
 os.Exit(2)
 }
-// ৫. File Validation: Check if files exist and are not empty
 if err := checkFileExists(*baselineFlag); err != nil {
 fmt.Fprintf(os.Stderr, "Baseline Error: %v\n", err)
 os.Exit(2)
@@ -49,6 +48,17 @@ if err := checkFileExists(*candidateFlag); err != nil {
 fmt.Fprintf(os.Stderr, "Candidate Error: %v\n", err)
 os.Exit(2)
 }
-fmt.Println("Files successfully validated.")
+// ৬. OpenAPI Parsing
+baseDoc, err := parser.ParseSpec(*baselineFlag)
+if err != nil {
+fmt.Fprintf(os.Stderr, "Baseline Error: %v\n", err)
+os.Exit(2) // Invalid spec is a usage/input error
+}
+candDoc, err := parser.ParseSpec(*candidateFlag)
+if err != nil {
+fmt.Fprintf(os.Stderr, "Candidate Error: %v\n", err)
+os.Exit(2)
+}
+fmt.Printf("Successfully parsed Baseline (Version: %s) and Candidate (Version: %s)\n", baseDoc.GetVersion(), candDoc.GetVersion())
 os.Exit(0)
 }

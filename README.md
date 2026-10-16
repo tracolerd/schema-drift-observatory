@@ -25,7 +25,7 @@
 > **Early MVP / active development.** The CLI implements six selected comparison rules, not full OpenAPI compatibility analysis. The dashboard shows a bundled example report and is not connected to the CLI. Review the [known limitations](#known-limitations) before relying on findings in a release workflow.
 
 <p align="center">
-  <a href="#what-is-implemented">Implemented scope</a> ·
+  <a href="#what-is-implemented-today">Implemented scope</a> ·
   <a href="#architecture">Architecture</a> ·
   <a href="#quick-start">Quick start</a> ·
   <a href="#ci-and-current-verification">CI & tests</a> ·

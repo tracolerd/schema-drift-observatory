@@ -4,6 +4,7 @@ import (
 "flag"
 "fmt"
 "os"
+"strings"
 "github.com/tracolerd/schema-drift-observatory/internal/engine"
 "github.com/tracolerd/schema-drift-observatory/internal/parser"
 )
@@ -25,6 +26,8 @@ func main() {
 versionFlag := flag.Bool("version", false, "Print tool version")
 baselineFlag := flag.String("baseline", "", "Path to baseline OpenAPI spec (JSON/YAML)")
 candidateFlag := flag.String("candidate", "", "Path to candidate OpenAPI spec (JSON/YAML)")
+formatFlag := flag.String("format", "text", "Output format: text or json")
+failOnFlag := flag.String("fail-on", "breaking", "Comma-separated categories to fail the CI build (e.g., breaking,potentially_breaking)")
 flag.Parse()
 if *versionFlag {
 fmt.Printf("Schema Drift Observatory v%s\n", Version)
@@ -62,13 +65,43 @@ if err != nil {
 fmt.Fprintf(os.Stderr, "Error extracting candidate: %v\n", err)
 os.Exit(2)
 }
-// ৭. Evaluate Rules
 result := engine.CompareSpecs(baseSpec, candSpec)
-// ৮. Output JSON Report (Temporary for testing)
+// Format Output
+if *formatFlag == "json" {
 reportBytes, _ := json.MarshalIndent(result, "", "  ")
 fmt.Println(string(reportBytes))
-if !result.Compatible {
-os.Exit(1) // Policy violation exit code
+} else {
+// Text Summary Output
+fmt.Printf("Schema Drift Observatory Comparison Report\n")
+fmt.Printf("----------------------------------------\n")
+fmt.Printf("Baseline:  %s\n", *baselineFlag)
+fmt.Printf("Candidate: %s\n", *candidateFlag)
+fmt.Printf("\nSummary:\n")
+fmt.Printf("  Breaking:             %d\n", result.Counts[engine.CategoryBreaking])
+fmt.Printf("  Potentially Breaking: %d\n", result.Counts[engine.CategoryPotentiallyBreaking])
+fmt.Printf("  Non-Breaking:         %d\n", result.Counts[engine.CategoryNonBreaking])
+if len(result.Findings) > 0 {
+fmt.Printf("\nFindings:\n")
+for i, f := range result.Findings {
+fmt.Printf("  %d. [%s] %s %s - %s\n", i+1, strings.ToUpper(string(f.Category)), f.Method, f.Path, f.Explanation)
+fmt.Printf("     Rule: %s | Location: %s\n", f.RuleID, f.Location)
+}
+} else {
+fmt.Printf("\nNo compatibility issues found!\n")
+}
+}
+// Exit Code Policy Evaluation
+failOnCategories := strings.Split(*failOnFlag, ",")
+hasViolation := false
+for _, cat := range failOnCategories {
+c := engine.Category(strings.TrimSpace(cat))
+if result.Counts[c] > 0 {
+hasViolation = true
+break
+}
+}
+if hasViolation {
+os.Exit(1)
 }
 os.Exit(0)
 }

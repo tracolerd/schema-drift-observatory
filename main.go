@@ -1,8 +1,10 @@
 ﻿package main
 import (
+"encoding/json"
 "flag"
 "fmt"
 "os"
+"github.com/tracolerd/schema-drift-observatory/internal/engine"
 "github.com/tracolerd/schema-drift-observatory/internal/parser"
 )
 const Version = "0.1.0"
@@ -23,13 +25,6 @@ func main() {
 versionFlag := flag.Bool("version", false, "Print tool version")
 baselineFlag := flag.String("baseline", "", "Path to baseline OpenAPI spec (JSON/YAML)")
 candidateFlag := flag.String("candidate", "", "Path to candidate OpenAPI spec (JSON/YAML)")
-flag.Usage = func() {
-fmt.Fprintf(os.Stderr, "Schema Drift Observatory (v%s)\n\n", Version)
-fmt.Fprintf(os.Stderr, "Usage:\n")
-fmt.Fprintf(os.Stderr, "  schema-drift-observatory --baseline <path> --candidate <path>\n\n")
-fmt.Fprintf(os.Stderr, "Flags:\n")
-flag.PrintDefaults()
-}
 flag.Parse()
 if *versionFlag {
 fmt.Printf("Schema Drift Observatory v%s\n", Version)
@@ -37,7 +32,6 @@ os.Exit(0)
 }
 if *baselineFlag == "" || *candidateFlag == "" {
 fmt.Fprintln(os.Stderr, "Error: Both --baseline and --candidate flags are required.")
-flag.Usage()
 os.Exit(2)
 }
 if err := checkFileExists(*baselineFlag); err != nil {
@@ -48,7 +42,6 @@ if err := checkFileExists(*candidateFlag); err != nil {
 fmt.Fprintf(os.Stderr, "Candidate Error: %v\n", err)
 os.Exit(2)
 }
-// Parsing Raw Documents
 baseDoc, err := parser.ParseSpec(*baselineFlag)
 if err != nil {
 fmt.Fprintf(os.Stderr, "Baseline Error: %v\n", err)
@@ -59,19 +52,23 @@ if err != nil {
 fmt.Fprintf(os.Stderr, "Candidate Error: %v\n", err)
 os.Exit(2)
 }
-// Extracting into Normalized Model
 baseSpec, err := parser.ExtractSpec(baseDoc)
 if err != nil {
-fmt.Fprintf(os.Stderr, "Error extracting baseline model: %v\n", err)
+fmt.Fprintf(os.Stderr, "Error extracting baseline: %v\n", err)
 os.Exit(2)
 }
 candSpec, err := parser.ExtractSpec(candDoc)
 if err != nil {
-fmt.Fprintf(os.Stderr, "Error extracting candidate model: %v\n", err)
+fmt.Fprintf(os.Stderr, "Error extracting candidate: %v\n", err)
 os.Exit(2)
 }
-fmt.Printf("Extraction Successful!\n")
-fmt.Printf("Baseline Endpoints: %d\n", len(baseSpec.Endpoints))
-fmt.Printf("Candidate Endpoints: %d\n", len(candSpec.Endpoints))
+// ৭. Evaluate Rules
+result := engine.CompareSpecs(baseSpec, candSpec)
+// ৮. Output JSON Report (Temporary for testing)
+reportBytes, _ := json.MarshalIndent(result, "", "  ")
+fmt.Println(string(reportBytes))
+if !result.Compatible {
+os.Exit(1) // Policy violation exit code
+}
 os.Exit(0)
 }

@@ -1,13 +1,13 @@
 ﻿# Project State: Schema Drift Observatory
 ## Current Phase
-Phase 0: Architecture Foundation & Repository Setup
+Phase 2: Normalized Model & Core Rule Engine with Fixtures
 ## Technical Stack Overview
 Our primary engine is built using Go as a standalone CLI application to ensure fast execution and static binary compilation. For OpenAPI parsing and validation, we will rely on a maintained Go library (to be chosen in Phase 1). Future expansions will include a UI dashboard built with Vue 3, TypeScript, and Vite, keeping the architecture strictly modular without any database, microservices, or AI/LLM dependencies for the MVP.
 ## Completed Milestones
 - [x] Environment Setup (Go 1.27.0 installed, Repo Cloned)
 - [x] Base Documentation Created (PROJECT_STATE, DECISIONS, SPEC_SUBSET_AND_CONTRACT)
+- [x] Phase 1: Go Module, CLI Skeleton & Input Validation
 ## Upcoming Milestones
-- [ ] Phase 1: Go Module, CLI Skeleton & Input Validation
 - [ ] Phase 2: Normalized Model & Core Rule Engine with Fixtures
 - [ ] Phase 3: Deterministic JSON Report, Terminal Summary & Exit Policy
 - [ ] Phase 4: Edge cases, Property/Golden Tests, Linter/CI Setup

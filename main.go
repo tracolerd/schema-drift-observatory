@@ -48,17 +48,30 @@ if err := checkFileExists(*candidateFlag); err != nil {
 fmt.Fprintf(os.Stderr, "Candidate Error: %v\n", err)
 os.Exit(2)
 }
-// ৬. OpenAPI Parsing
+// Parsing Raw Documents
 baseDoc, err := parser.ParseSpec(*baselineFlag)
 if err != nil {
 fmt.Fprintf(os.Stderr, "Baseline Error: %v\n", err)
-os.Exit(2) // Invalid spec is a usage/input error
+os.Exit(2)
 }
 candDoc, err := parser.ParseSpec(*candidateFlag)
 if err != nil {
 fmt.Fprintf(os.Stderr, "Candidate Error: %v\n", err)
 os.Exit(2)
 }
-fmt.Printf("Successfully parsed Baseline (Version: %s) and Candidate (Version: %s)\n", baseDoc.GetVersion(), candDoc.GetVersion())
+// Extracting into Normalized Model
+baseSpec, err := parser.ExtractSpec(baseDoc)
+if err != nil {
+fmt.Fprintf(os.Stderr, "Error extracting baseline model: %v\n", err)
+os.Exit(2)
+}
+candSpec, err := parser.ExtractSpec(candDoc)
+if err != nil {
+fmt.Fprintf(os.Stderr, "Error extracting candidate model: %v\n", err)
+os.Exit(2)
+}
+fmt.Printf("Extraction Successful!\n")
+fmt.Printf("Baseline Endpoints: %d\n", len(baseSpec.Endpoints))
+fmt.Printf("Candidate Endpoints: %d\n", len(candSpec.Endpoints))
 os.Exit(0)
 }

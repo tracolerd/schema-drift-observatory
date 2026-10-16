@@ -118,3 +118,21 @@ This repository currently contains the project brief and license. No working CLI
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+## Features
+- **Deterministic JSON Reports:** Ideal for CI/CD integration.
+- **Strict Directional Checking:** Understands that adding a required request parameter is breaking, but adding an optional response property is not.
+- **Configurable Exit Policies:** Fail your CI build only on the severity levels you care about.
+- **Vue 3 Dashboard:** Includes a standalone SPA to visualize compatibility reports.
+
+## Local Usage
+`ash
+# Build the binary
+go build -o schema-drift-observatory main.go
+
+# Run a comparison
+./schema-drift-observatory --baseline base.yaml --candidate cand.yaml --fail-on breaking
+`",
+    ",
+    
+See examples/github-actions-usage.yml for a complete CI workflow.

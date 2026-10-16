@@ -13,3 +13,7 @@
 3. 
 on_breaking: Safe for existing clients (e.g., new optional property added).
 4. undetermined: Spec constructs that are outside the supported MVP scope.
+
+## 2026-10-16: Phase 7 - GraphQL & Protobuf Evaluation (MVP Wrap-up)
+**Context:** The roadmap required evaluating GraphQL/Protobuf adapters after OpenAPI stabilization.
+**Decision:** Deferred to a future v2.0 release. OpenAPI relies on REST semantics (Paths, Methods, HTTP Status codes), whereas GraphQL uses a single endpoint with query ASTs, and gRPC relies on strict Protobuf contracts. Integrating them requires completely separate parser engines and a different internal normalized model. MVP scope is successfully completed with OpenAPI 3.x support.

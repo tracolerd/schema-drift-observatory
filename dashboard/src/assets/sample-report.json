@@ -1,0 +1,31 @@
+﻿{
+  "compatible": false,
+  "counts": {
+    "breaking": 2,
+    "potentially_breaking": 1,
+    "non_breaking": 0,
+    "undetermined": 0
+  },
+  "findings": [
+    {
+      "rule_id": "SDO-004",
+      "category": "breaking",
+      "method": "POST",
+      "path": "/users",
+      "location": "paths./users.POST.requestBody.age",
+      "explanation": "A new required property 'age' was added to the request body.",
+      "impact": "Clients not sending this property will receive HTTP 400.",
+      "remediation": "Make the new request property optional."
+    },
+    {
+      "rule_id": "SDO-003",
+      "category": "potentially_breaking",
+      "method": "GET",
+      "path": "/users",
+      "location": "paths./users.GET.parameters.old_param",
+      "explanation": "The header parameter 'old_param' was removed.",
+      "impact": "Clients sending this parameter might face issues if the server strictly validates unknown parameters.",
+      "remediation": "Ensure the server safely ignores unknown parameters."
+    }
+  ]
+}

@@ -1,13 +1,39 @@
-# Schema Drift Observatory
+<p align="center">
+  <img src="assets/schema-drift-banner.svg" alt="Schema Drift Observatory — animated OpenAPI contract comparison banner" width="100%" />
+</p>
 
-[![CI Pipeline](https://github.com/tracolerd/schema-drift-observatory/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tracolerd/schema-drift-observatory/actions/workflows/ci.yml)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+<h1 align="center">Schema Drift Observatory</h1>
 
-**Detect selected API contract changes before they reach consumers.**
+<p align="center">
+  <strong>Detect selected API contract changes before they reach consumers.</strong><br/>
+  A Go CLI that compares two OpenAPI specifications and reports a documented subset of compatibility changes.
+</p>
 
-Schema Drift Observatory is an early-stage Go CLI for comparing two OpenAPI specifications and reporting a documented subset of compatibility changes. The repository also contains a small Vue 3 dashboard prototype for viewing a bundled example report.
+<p align="center">
+  <a href="https://github.com/tracolerd/schema-drift-observatory/actions/workflows/ci.yml">
+    <img src="https://github.com/tracolerd/schema-drift-observatory/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Pipeline status" />
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="MIT License" />
+  </a>
+  <img src="https://img.shields.io/badge/Go-1.27.0-00ADD8?logo=go&logoColor=white" alt="Go 1.27.0" />
+  <img src="https://img.shields.io/badge/Dashboard-Vue%203%20prototype-42B883?logo=vuedotjs&logoColor=white" alt="Vue 3 dashboard prototype" />
+  <img src="https://img.shields.io/badge/Stage-Early%20MVP-8B7CFF" alt="Early MVP" />
+</p>
 
-> **Status: Early MVP / active development.** The current engine detects selected operation, parameter, and JSON-schema property changes. It is not a complete OpenAPI compatibility checker and should not be used as the sole release gate for production APIs. Important coverage gaps are listed below.
+> [!IMPORTANT]
+> **Early MVP / active development.** The CLI implements six selected comparison rules, not full OpenAPI compatibility analysis. The dashboard shows a bundled example report and is not connected to the CLI. Review the [known limitations](#known-limitations) before relying on findings in a release workflow.
+
+<p align="center">
+  <a href="#what-is-implemented">Implemented scope</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#ci-and-current-verification">CI & tests</a> ·
+  <a href="#known-limitations">Limitations</a> ·
+  <a href="#roadmap">Roadmap</a>
+</p>
+
+---
 
 ## Why it exists
 

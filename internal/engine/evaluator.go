@@ -2,7 +2,6 @@
 import (
 "github.com/tracolerd/schema-drift-observatory/internal/model"
 )
-// CompareSpecs compares a baseline spec against a candidate spec and returns a Result.
 func CompareSpecs(baseline, candidate *model.NormalizedSpec) *Result {
 result := &Result{
 Compatible: true,
@@ -14,8 +13,10 @@ CategoryUndetermined:        0,
 },
 Findings: []Finding{},
 }
-// Rule: SDO-001 (Path/Operation Removed)
+// Execute Rules
 rulePathRemoved(baseline, candidate, result)
+ruleParamAddedRequired(baseline, candidate, result)
+ruleParamChanged(baseline, candidate, result)
 // Update compatibility flag
 if result.Counts[CategoryBreaking] > 0 {
 result.Compatible = false

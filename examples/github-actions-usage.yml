@@ -1,0 +1,29 @@
+﻿name: API Schema Compatibility Check
+on:
+  pull_request:
+    branches: [ "main" ]
+jobs:
+  schema-drift:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR Code (Candidate)
+        uses: actions/checkout@v4
+        with:
+          path: candidate-repo
+      - name: Checkout Main Branch (Baseline)
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: baseline-repo
+      # In a real scenario, download the compiled binary from releases
+      - name: Install Schema Drift Observatory
+        run: |
+          git clone https://github.com/tracolerd/schema-drift-observatory.git sdo-tool
+          cd sdo-tool && go build -o schema-drift-observatory main.go
+          mv schema-drift-observatory /usr/local/bin/
+      - name: Run Compatibility Check
+        run: |
+          schema-drift-observatory \
+            --baseline baseline-repo/openapi.yaml \
+            --candidate candidate-repo/openapi.yaml \
+            --fail-on breaking,potentially_breaking

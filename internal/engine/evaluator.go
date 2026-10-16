@@ -13,11 +13,11 @@ CategoryUndetermined:        0,
 },
 Findings: []Finding{},
 }
-// Execute Rules
 rulePathRemoved(baseline, candidate, result)
 ruleParamAddedRequired(baseline, candidate, result)
 ruleParamChanged(baseline, candidate, result)
-// Update compatibility flag
+ruleRequestBodyChanged(baseline, candidate, result)
+ruleResponseBodyChanged(baseline, candidate, result)
 if result.Counts[CategoryBreaking] > 0 {
 result.Compatible = false
 }

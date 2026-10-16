@@ -2,6 +2,7 @@
 import (
 "fmt"
 "github.com/pb33f/libopenapi"
+"github.com/pb33f/libopenapi/datamodel/high/base"
 v3 "github.com/pb33f/libopenapi/datamodel/high/v3"
 "github.com/tracolerd/schema-drift-observatory/internal/model"
 )
@@ -55,5 +56,43 @@ In:       param.In,
 Required: required,
 }
 }
+// Extract Request Body (JSON only for MVP)
+if op.RequestBody != nil && op.RequestBody.Content != nil {
+if jsonContent, ok := op.RequestBody.Content.Get("application/json"); ok {
+endpoint.RequestBody = extractSchema(jsonContent.Schema.Schema())
+}
+}
+// Extract Responses (200 JSON only for MVP)
+if op.Responses != nil && op.Responses.Codes != nil {
+if resp200, ok := op.Responses.Codes.Get("200"); ok && resp200.Content != nil {
+if jsonContent, ok := resp200.Content.Get("application/json"); ok {
+endpoint.Responses["200"] = &model.Response{
+StatusCode: "200",
+Content:    extractSchema(jsonContent.Schema.Schema()),
+}
+}
+}
+}
 spec.Endpoints[key] = endpoint
+}
+// extractSchema recursively converts libopenapi Schema to our internal Schema model.
+func extractSchema(schema *base.Schema) *model.Schema {
+if schema == nil {
+return nil
+}
+s := &model.Schema{
+Type:       "",
+Properties: make(map[string]*model.Schema),
+Required:   schema.Required,
+}
+// OpenAPI 3.0 type is a slice of strings in libopenapi's high-level model
+if len(schema.Type) > 0 {
+s.Type = schema.Type[0]
+}
+if schema.Properties != nil {
+for pair := schema.Properties.First(); pair != nil; pair = pair.Next() {
+s.Properties[pair.Key()] = extractSchema(pair.Value().Schema())
+}
+}
+return s
 }

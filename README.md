@@ -1,138 +1,234 @@
 # Schema Drift Observatory
 
-**Detect breaking API contract changes before they reach consumers.**
+[![CI Pipeline](https://github.com/tracolerd/schema-drift-observatory/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/tracolerd/schema-drift-observatory/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Schema Drift Observatory is a planned API compatibility and contract-analysis tool for teams that need to compare API definitions across releases. It aims to turn specification differences into explainable, reviewable findings that developers can use locally or in continuous integration.
+**Detect selected API contract changes before they reach consumers.**
 
-> **Project status:** Initial planning and repository setup. The comparison engine, dashboard, and CI integration are not implemented yet. Features below describe the intended design, not completed functionality.
+Schema Drift Observatory is an early-stage Go CLI for comparing two OpenAPI specifications and reporting a documented subset of compatibility changes. The repository also contains a small Vue 3 dashboard prototype for viewing a bundled example report.
 
-## Why this project exists
+> **Status: Early MVP / active development.** The current engine detects selected operation, parameter, and JSON-schema property changes. It is not a complete OpenAPI compatibility checker and should not be used as the sole release gate for production APIs. Important coverage gaps are listed below.
 
-An API can remain syntactically valid while becoming incompatible with existing clients. Removing a response field, changing a type, making an optional request field required, or removing an enum value can introduce a breaking change without an obvious failure during the provider's build.
+## Why it exists
 
-Schema Drift Observatory is intended to compare a known baseline with a candidate specification, explain relevant changes, and produce machine-readable results that can be reviewed before release.
+API specifications can change in ways that affect existing clients. Removing an operation, adding a required request parameter, or changing a request body can break consumers even when the specification remains valid.
 
-## Design goals
+Schema Drift Observatory aims to make selected changes easier to review by producing findings with a rule ID, category, affected operation, location, explanation, impact, and remediation guidance. It can also return a process exit code for simple CI policy checks.
 
-- **Explainable findings:** Every classification should link to a specific location and documented compatibility rule.
-- **Directional analysis:** Compatibility is evaluated from the perspective of a defined consumer/provider relationship, not from a vague universal score.
-- **Deterministic results:** The same inputs and rules should produce the same report.
-- **Automation-friendly output:** CI should be able to consume a stable report and exit status.
-- **Incremental scope:** Start with OpenAPI; add other contract formats only after the first engine is reliable.
+## What is implemented today
 
-## Planned capabilities
+### Go comparison CLI
 
-### Initial MVP
+- Parses input through `pb33f/libopenapi` and builds an internal normalized model.
+- Accepts baseline and candidate specification file paths.
+- Produces a terminal summary or JSON output.
+- Reports selected operation, parameter, and request/response property changes.
+- Sorts generated findings to make report ordering deterministic for the implemented rules.
+- Supports a configurable `--fail-on` category list.
+- Provides `--version` output.
 
-- Accept baseline and candidate OpenAPI specifications in JSON or YAML.
-- Parse and validate both specifications, reporting useful errors for invalid inputs.
-- Normalize relevant schema and operation details before comparison.
-- Detect selected changes to paths, HTTP methods, parameters, request bodies, response schemas, required fields, types, and enum values.
-- Classify findings as breaking, potentially breaking, or non-breaking using documented rules.
-- Include evidence such as the affected operation, schema location, change summary, rule identifier, and suggested remediation.
-- Export a JSON report and provide a predictable process exit code for CI usage.
+### Implemented rule subset
 
-### Later phases
+| Rule | Current behavior | Current category |
+|---|---|---|
+| `SDO-001` | Detects an operation present in the baseline but absent from the candidate | `breaking` |
+| `SDO-002` | Detects a newly added required operation-level parameter | `breaking` |
+| `SDO-003` | Detects a removed operation-level parameter or an optional parameter changed to required | `potentially_breaking` for removal; `breaking` for newly required |
+| `SDO-004` | Detects a new required request-body property or an existing request property changed from optional to required | `breaking` |
+| `SDO-005` | Detects a removed top-level property from the `200` `application/json` response schema | `breaking` |
+| `SDO-006` | Detects a new property in the `200` `application/json` response schema | `non_breaking` under a tolerant-reader assumption |
 
-- A Vue-based interface for inspecting changes and filtering findings.
-- GitHub Actions examples and configurable release policies.
-- GraphQL schema comparison.
-- gRPC and Protocol Buffers compatibility checks.
-- Historical comparisons and PostgreSQL-backed report storage, if history becomes a product requirement.
+These rules cover a limited subset, not every possible contract change. In particular, the current implementation does **not** compare schema property types or enum values. See [Known limitations](#known-limitations) before relying on the result.
 
-These later items are roadmap goals, not promises that every protocol will be supported in the first release.
+### Dashboard prototype
 
-## Proposed architecture
+The `dashboard/` directory contains a Vue 3 + TypeScript + Vite single-page application. It currently imports `dashboard/src/assets/sample-report.json` at build time and displays that example report. It is **not yet connected to the Go CLI**, does not upload specifications, and does not dynamically run comparisons.
+
+The bundled example JSON is illustrative only. Its current summary counts do not match the findings array, so do not use it as evidence of engine accuracy until the fixture is corrected.
+
+## Architecture
 
 ~~~mermaid
-flowchart TD
-    A[Baseline OpenAPI] --> C[Parse and Validate]
-    B[Candidate OpenAPI] --> C
-    C --> D[Normalization Layer]
-    D --> E[Compatibility Rule Engine]
-    E --> F[Structured Findings]
-    F --> G[JSON Report and Exit Code]
-    F --> H[Future Web Dashboard]
-    G --> I[CI Policy Gate]
+flowchart LR
+    A[Baseline OpenAPI file] --> C[Go CLI]
+    B[Candidate OpenAPI file] --> C
+    C --> D[libopenapi parser]
+    D --> E[Normalized model]
+    E --> F[SDO-001 to SDO-006 rules]
+    F --> G[Text summary or JSON report]
+    G --> H[Configurable exit policy]
+    I[Bundled sample-report.json] --> J[Vue dashboard prototype]
 ~~~
 
-The Go comparison engine should remain usable independently of the web interface. Compatibility rules should be separated from parsing and reporting so that each rule can be tested with focused fixtures.
+The CLI is the primary implementation. The dashboard is currently a separate demo surface and should not be assumed to represent a live comparison.
 
-## Proposed technology
+## Technology
 
-| Area | Planned choice | Rationale |
-|---|---|---|
-| Comparison engine | Go | A straightforward way to ship a fast, portable CLI |
-| Contract format | OpenAPI 3.x | A useful, well-defined starting point for HTTP APIs |
-| Web interface | Vue 3, TypeScript, Vite | A separate UI for reviewing detailed findings |
-| Reports | JSON | Easy to inspect locally and consume in automation |
-| CI | GitHub Actions | Demonstrate release-policy integration |
-| Future persistence | PostgreSQL | Only needed if historical runs and shared workflows require storage |
-| Future formats | GraphQL SDL, Protobuf | Separate adapters after OpenAPI rules stabilize |
+| Area | Technology |
+|---|---|
+| Core language | Go |
+| OpenAPI parsing | `github.com/pb33f/libopenapi` |
+| CLI arguments | Go standard library `flag` |
+| Dashboard | Vue 3, TypeScript, Vite |
+| CI | GitHub Actions |
+| Test framework | Go `testing` package |
 
-## Compatibility rules and edge cases
+The module currently declares Go `1.27.0` in `go.mod`. Use a matching Go toolchain; Go's automatic toolchain selection may download it if enabled.
 
-A change should not be labelled breaking solely because its text differs. Rules must consider request versus response direction, required versus optional fields, schema constraints, nullable behavior where applicable, and whether a consumer may legally depend on the changed contract.
+## Quick start
 
-Initial test fixtures should cover at least:
+### Prerequisites
 
-- Removed paths and HTTP methods.
-- A newly required request property.
-- Removed response properties.
-- Changed field types.
-- Added optional response properties.
-- Removed enum values.
-- Parameter location or requiredness changes.
-- Invalid specifications and unsupported constructs.
+- Go toolchain compatible with `go.mod` (`go 1.27.0` at the time of this update).
+- Two OpenAPI files that are valid inputs for the current parser.
+- Node.js and npm only if you want to run the dashboard prototype.
 
-Each rule needs a documented rationale and tests. Where the impact cannot be established confidently, the engine should report uncertainty rather than invent certainty.
+### Build and test the CLI
 
-## Development roadmap
+From the repository root:
 
-1. **Specification baseline:** Define normalized internal types, parser boundaries, CLI inputs, and representative fixtures.
-2. **Comparison engine:** Implement the first documented OpenAPI rules with unit tests.
-3. **Report contract:** Stabilize finding IDs, locations, severity categories, JSON output, and exit behavior.
-4. **CLI hardening:** Improve validation messages, edge-case handling, and repeatable test coverage.
-5. **Dashboard:** Build a Vue interface around the stable report contract.
-6. **CI integration:** Add a sample workflow and configurable policy thresholds.
-7. **Additional formats:** Evaluate GraphQL and Protobuf support against the same principles.
+~~~powershell
+go mod download
+go test ./...
+go vet ./...
+go build -o schema-drift-observatory.exe .
+~~~
 
-## Quality strategy
+Check the CLI version:
 
-- Unit tests for each compatibility rule.
-- Golden fixtures for representative baseline/candidate pairs.
-- Negative tests for malformed input and unsupported definitions.
-- Determinism tests for repeated comparisons.
-- CLI integration tests for exit codes and report generation.
-- Frontend tests once the dashboard exists.
-- CI checks for formatting, linting, and tests once configured.
+~~~powershell
+.\schema-drift-observatory.exe --version
+~~~
 
-## Security and responsible handling
+### Compare two specifications
 
-Specifications are untrusted input. The implementation should limit input size, handle parser failures safely, avoid executing specification content, and avoid leaking local filesystem paths or secrets in reports. Reports may reveal internal API structure; users should decide what can be uploaded or published.
+Replace the example paths below with the actual locations of your baseline and candidate specifications:
 
-## Repository status
+~~~powershell
+.\schema-drift-observatory.exe --baseline ./path/to/baseline.yaml --candidate ./path/to/candidate.yaml --format text --fail-on breaking
+~~~
 
-This repository currently contains the project brief and license. No working CLI, API compatibility rules, dashboard, or automated test suite should be assumed to exist until code and verified test results are added.
+Request JSON output for automation:
+
+~~~powershell
+.\schema-drift-observatory.exe --baseline ./path/to/baseline.yaml --candidate ./path/to/candidate.yaml --format json --fail-on breaking,potentially_breaking
+~~~
+
+Supported flags:
+
+| Flag | Purpose |
+|---|---|
+| `--version` | Print the CLI version and exit |
+| `--baseline` | Path to the baseline OpenAPI file |
+| `--candidate` | Path to the candidate OpenAPI file |
+| `--format text` or `--format json` | Select the terminal summary or JSON report |
+| `--fail-on` | Comma-separated finding categories that cause a policy-failure exit |
+
+### Exit codes
+
+| Exit code | Meaning |
+|---:|---|
+| `0` | Comparison completed and no selected `--fail-on` category was found |
+| `1` | Comparison completed and at least one selected category was found |
+| `2` | Required arguments are missing, an input cannot be read, or parsing/extraction failed |
+
+The default policy is `--fail-on breaking`. To fail on both breaking and potentially breaking findings, pass `--fail-on breaking,potentially_breaking`.
+
+**Important:** The JSON field `compatible` is currently set to `false` only when at least one `breaking` finding exists. A report can therefore have `compatible: true` and still contain `potentially_breaking` findings. Configure `--fail-on` explicitly for your intended CI policy.
+
+### Run the dashboard prototype
+
+~~~powershell
+cd dashboard
+npm ci
+npm run dev
+~~~
+
+This launches the current static report viewer using the bundled sample JSON. It does not launch the Go CLI or compare user-supplied files.
+
+## CI and current verification
+
+The GitHub Actions workflow at `.github/workflows/ci.yml` currently checks:
+
+- Go formatting (`gofmt -s -l`)
+- `go vet ./...`
+- `go test -v ./...`
+- `go build -v ./...`
+
+The latest observed workflow run before this README update completed successfully: [CI run #5](https://github.com/tracolerd/schema-drift-observatory/actions/runs/38937094715). It ran **three explicit Go unit tests**: operation removal, required parameter addition, and optional response property addition. This is a useful baseline, but it is not broad evidence of compatibility coverage.
+
+The current CI workflow does not build or test the Vue dashboard. The dashboard has a build script in `dashboard/package.json`, but its build has not been verified by this audit.
+
+## Known limitations and audit notes
+
+The following are current implementation gaps, not supported features:
+
+1. **Incomplete response coverage.** Response comparison only examines a `200` response with `application/json`. Removing the `200` response, switching the response content type, or using another success status can bypass the current response-property rules.
+2. **Schema type and enum changes are not compared.** The normalized model has fields for some schema metadata, but extraction/rules do not currently detect changes to existing property types or enum values.
+3. **Path-level parameters are not extracted.** Parameter comparison currently considers parameters attached to individual operations.
+4. **HTTP method coverage is partial.** The extractor currently handles `GET`, `POST`, `PUT`, `DELETE`, and `PATCH`; `HEAD` and `OPTIONS` are not included.
+5. **Unsupported constructs are not consistently reported as `undetermined`.** The design notes describe an intended `undetermined` category, but the current rules do not comprehensively emit it for unsupported schema constructs. No finding must not be interpreted as proof of compatibility.
+6. **CLI option validation needs hardening.** Unsupported `--format` values currently fall back to text output. Unknown `--fail-on` category names are not rejected; a typo can therefore weaken a CI policy.
+7. **No input-size limit is enforced by the CLI.** Input files are read into memory; add explicit size/resource limits before processing untrusted or very large specifications.
+8. **The dashboard is static.** There is no browser-to-CLI integration, upload workflow, API server, or live comparison state.
+9. **The sample dashboard counts are inconsistent.** The bundled JSON says there are two breaking findings but lists only one breaking finding; correct the fixture and add a consistency test.
+10. **Coverage is narrow.** The current Go tests do not yet cover the full rule set, parser/extractor edge cases, CLI exit policies, malformed input, deterministic report behavior, or the listed limitation cases.
+11. **CI toolchain configuration should be aligned.** The workflow requests Go `1.22`, while `go.mod` declares `1.27.0`; current CI succeeds through Go's automatic toolchain selection, but the versions should be made explicit and consistent.
+12. **Windows build script should fail fast.** `build.ps1` formats, vets, and builds, but does not run tests and does not explicitly stop on a failing vet step before proceeding.
+
+For a compatibility checker, false negatives are more dangerous than an honest “unsupported / undetermined” result. Treat this build as a learning MVP until the gaps above are closed with rules, tests, and documented semantics.
+
+## Roadmap
+
+### P0 — Trustworthy compatibility results
+
+- Validate `--format` and `--fail-on` inputs; reject unknown values.
+- Add bounded input reading and clear validation errors.
+- Detect missing/changed response status codes and media types.
+- Compare existing schema property types, enum values, and relevant requiredness changes.
+- Extract and merge path-level and operation-level parameters according to OpenAPI rules.
+- Emit `undetermined` findings when a change cannot be evaluated safely.
+- Expand parser, rule, CLI, and regression tests.
+
+### P1 — Make the demo honest and useful
+
+- Correct the bundled sample-report summary counts.
+- Add a fixture-consistency test.
+- Verify the dashboard production build and add it to CI.
+- Clearly label sample data in the UI.
+
+### P2 — Improve developer workflow
+
+- Align the Go version in CI with `go.mod`.
+- Make `build.ps1` stop on errors and run tests.
+- Add representative baseline/candidate OpenAPI fixtures and copy-pasteable end-to-end examples.
+- Add release artifacts and a more complete CI integration example after the CLI contract stabilizes.
+
+### Future directions
+
+GraphQL, gRPC/Protocol Buffers, historical report storage, and a live dashboard integration are deferred. They should be considered only after the OpenAPI comparison semantics and test coverage are dependable.
+
+## Repository layout
+
+~~~text
+.
+├── main.go
+├── internal/
+│   ├── engine/        # Compatibility rules and evaluator
+│   ├── model/         # Normalized comparison model
+│   └── parser/        # OpenAPI parsing and extraction
+├── dashboard/         # Vue 3 static report-viewer prototype
+├── docs/              # Decisions, project state, scope/contract notes
+├── examples/          # Illustrative CI workflow
+├── .github/workflows/ # Go CI pipeline
+├── go.mod
+└── build.ps1
+~~~
+
+## Contributing
+
+Issues and focused pull requests are welcome. For behavior changes, include a minimal baseline/candidate fixture pair, explain the compatibility assumption, and add tests that cover both the expected finding and a nearby non-breaking or unsupported case.
 
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-## Features
-- **Deterministic JSON Reports:** Ideal for CI/CD integration.
-- **Strict Directional Checking:** Understands that adding a required request parameter is breaking, but adding an optional response property is not.
-- **Configurable Exit Policies:** Fail your CI build only on the severity levels you care about.
-- **Vue 3 Dashboard:** Includes a standalone SPA to visualize compatibility reports.
-
-## Local Usage
-`ash
-# Build the binary
-go build -o schema-drift-observatory main.go
-
-# Run a comparison
-./schema-drift-observatory --baseline base.yaml --candidate cand.yaml --fail-on breaking
-`",
-    ",
-    
-See examples/github-actions-usage.yml for a complete CI workflow.

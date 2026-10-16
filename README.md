@@ -229,6 +229,12 @@ GraphQL, gRPC/Protocol Buffers, historical report storage, and a live dashboard 
 
 Issues and focused pull requests are welcome. For behavior changes, include a minimal baseline/candidate fixture pair, explain the compatibility assumption, and add tests that cover both the expected finding and a nearby non-breaking or unsupported case.
 
+## Author & Development
+
+**Project author and solo developer:** [Nurul Faiyaz](https://github.com/tracolerd).
+
+This project is independently developed and maintained by Nurul Faiyaz. AI-assisted tools may be used as part of the development workflow; the project author remains responsible for technical decisions, code review, validation, and maintenance.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

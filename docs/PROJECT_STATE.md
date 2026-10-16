@@ -1,6 +1,6 @@
 ﻿# Project State: Schema Drift Observatory
 ## Current Phase
-Phase 4: Edge cases, Property/Golden Tests, Linter/CI Setup
+Phase 5: Vue 3 + TypeScript Dashboard
 ## Technical Stack Overview
 Our primary engine is built using Go as a standalone CLI application to ensure fast execution and static binary compilation. For OpenAPI parsing and validation, we will rely on a maintained Go library (`pb33f/libopenapi`). Future expansions will include a UI dashboard built with Vue 3, TypeScript, and Vite.
 ## Completed Milestones
@@ -9,8 +9,8 @@ Our primary engine is built using Go as a standalone CLI application to ensure f
 - [x] Phase 1: Go Module, CLI Skeleton & Input Validation
 - [x] Phase 2: Normalized Model & Core Rule Engine with Fixtures (SDO-001 to SDO-006)
 - [x] Phase 3: Deterministic JSON Report, Terminal Summary & Exit Policy
+- [x] Phase 4: Edge cases, Property/Golden Tests, Linter/CI Setup
 ## Upcoming Milestones
-- [ ] Phase 4: Edge cases, Property/Golden Tests, Linter/CI Setup
 - [ ] Phase 5: Vue 3 + TypeScript Dashboard
 - [ ] Phase 6: GitHub Actions policy example
 - [ ] Phase 7: Evaluate GraphQL/Protobuf adapters

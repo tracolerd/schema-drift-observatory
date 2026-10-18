@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/schema-drift-banner.svg" alt="Schema Drift Observatory — animated OpenAPI contract comparison banner" width="100%" />
+  <img src="assets/schema-drift-banner.svg" alt="Schema Drift Observatory — baseline and candidate OpenAPI contract comparison graphic" width="100%" />
 </p>
 
 <h1 align="center">Schema Drift Observatory</h1>

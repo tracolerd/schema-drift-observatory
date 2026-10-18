@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Detect selected API contract changes before they reach consumers.</strong><br/>
-  A Go CLI that compares two OpenAPI specifications and reports a documented subset of compatibility changes.
+  A Go CLI that compares a baseline OpenAPI specification with a candidate and reports a documented subset of compatibility changes.
 </p>
 
 <p align="center">

@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	defaultMaxSpecBytes int64 = 10 * 1024 * 1024
-	maxConfigurableSpecBytes int64 = 100 * 1024 * 1024
-	maxSpecBytesEnv = "SCHEMA_DRIFT_MAX_SPEC_BYTES"
+	defaultMaxSpecBytes       int64 = 10 * 1024 * 1024
+	maxConfigurableSpecBytes  int64 = 100 * 1024 * 1024
+	maxSpecBytesEnv                 = "SCHEMA_DRIFT_MAX_SPEC_BYTES"
 )
 
 func configuredMaxSpecBytes() (int64, error) {

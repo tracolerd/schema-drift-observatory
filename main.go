@@ -74,7 +74,7 @@ func main() {
 	}
 	failOnCategories, err := parseFailOn(*failOnFlag)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Configuration Error: %v\\n", err)
+		fmt.Fprintf(os.Stderr, "Configuration Error: %v\n", err)
 		os.Exit(2)
 	}
 	if *baselineFlag == "" || *candidateFlag == "" {

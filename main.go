@@ -25,6 +25,38 @@ func checkFileExists(path string) error {
 	}
 	return nil
 }
+
+func validateFormat(format string) error {
+	switch format {
+	case "text", "json":
+		return nil
+	default:
+		return fmt.Errorf("unsupported --format %q: choose text or json", format)
+	}
+}
+
+func parseFailOn(value string) ([]engine.Category, error) {
+	supported := map[engine.Category]struct{}{
+		engine.CategoryBreaking:            {},
+		engine.CategoryPotentiallyBreaking: {},
+		engine.CategoryNonBreaking:         {},
+		engine.CategoryUndetermined:        {},
+	}
+	parts := strings.Split(value, ",")
+	categories := make([]engine.Category, 0, len(parts))
+	for _, part := range parts {
+		name := strings.TrimSpace(part)
+		category := engine.Category(name)
+		if name == "" {
+			return nil, fmt.Errorf("empty category in --fail-on %q", value)
+		}
+		if _, ok := supported[category]; !ok {
+			return nil, fmt.Errorf("unsupported --fail-on category %q", name)
+		}
+		categories = append(categories, category)
+	}
+	return categories, nil
+}
 func main() {
 	versionFlag := flag.Bool("version", false, "Print tool version")
 	baselineFlag := flag.String("baseline", "", "Path to baseline OpenAPI spec (JSON/YAML)")
@@ -35,6 +67,15 @@ func main() {
 	if *versionFlag {
 		fmt.Printf("Schema Drift Observatory v%s\n", Version)
 		os.Exit(0)
+	}
+	if err := validateFormat(*formatFlag); err != nil {
+		fmt.Fprintf(os.Stderr, "Configuration Error: %v\n", err)
+		os.Exit(2)
+	}
+	failOnCategories, err := parseFailOn(*failOnFlag)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Configuration Error: %v\n", err)
+		os.Exit(2)
 	}
 	if *baselineFlag == "" || *candidateFlag == "" {
 		fmt.Fprintln(os.Stderr, "Error: Both --baseline and --candidate flags are required.")
@@ -94,11 +135,9 @@ func main() {
 		}
 	}
 	// Exit Code Policy Evaluation
-	failOnCategories := strings.Split(*failOnFlag, ",")
 	hasViolation := false
-	for _, cat := range failOnCategories {
-		c := engine.Category(strings.TrimSpace(cat))
-		if result.Counts[c] > 0 {
+	for _, category := range failOnCategories {
+		if result.Counts[category] > 0 {
 			hasViolation = true
 			break
 		}

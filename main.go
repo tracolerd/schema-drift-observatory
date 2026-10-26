@@ -69,7 +69,7 @@ func main() {
 		os.Exit(0)
 	}
 	if err := validateFormat(*formatFlag); err != nil {
-		fmt.Fprintf(os.Stderr, "Configuration Error: %v\\n", err)
+		fmt.Fprintf(os.Stderr, "Configuration Error: %v\n", err)
 		os.Exit(2)
 	}
 	failOnCategories, err := parseFailOn(*failOnFlag)
